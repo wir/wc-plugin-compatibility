@@ -86,6 +86,22 @@ class WC_My_Plugin_Compatibility {
 
 
 	/**
+	 * Prints messages and errors which are stored in the session, then clears them.
+	 *
+	 * @since 1.0
+	 */
+	public static function wc_print_notices() {
+
+		if ( self::is_wc_version_gte_2_1() ) {
+			wc_print_notices();
+		} else {
+			global $woocommerce;
+			$woocommerce->show_messages();
+		}
+	}
+
+
+	/**
 	 * Compatibility function to queue some JavaScript code to be output in the footer.
 	 *
 	 * @since 1.0

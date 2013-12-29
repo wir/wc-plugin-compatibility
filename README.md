@@ -30,6 +30,7 @@ The class also provides a convenient reference of methods, constants, etc, that 
 * `global $woocommerce;` -> `WC()` (Use `WC_My_Plugin_Compatibility::WC()`)
 * `WC_Order::$shipping_method` is gone.  `WC_Order::get_shipping_methods()` and `WC_Order::has_shipping_method()` are added  (Use `WC_My_Plugin_Compatibility::get_shipping_method_ids()` and `WC_My_Plugin_Compatibility::has_shipping_method()`)
 * Session var `chosen_shipping_method` (int shipping method id) -> `chosen_shipping_methods` (associative array of shipping package index to int shipping method id) (Use `WC_My_Plugin_Compatibility::get_chosen_shipping_methods()`)
+* `Coocommerce->show_messages()` -> `wc_print_notices()` (Use `WC_My_Plugin_Compatibility::wc_print_notices()`)
 
 ### Not Fixed
 
