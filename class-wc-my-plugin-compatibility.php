@@ -260,6 +260,47 @@ class WC_My_Plugin_Compatibility {
 
 
 	/**
+	 * Returns the admin configuration url for the shipping method with class name
+	 * $gateway_class_name
+	 *
+	 * @since 1.0
+	 * @param string $shipping_method_class_name the shipping method class name
+	 * @return string admin configuration url for the shipping method
+	 */
+	public static function get_shipping_method_configuration_url( $shipping_method_class_name ) {
+
+		if ( self::is_wc_version_gte_2_1() ) {
+			return admin_url( 'admin.php?page=wc-settings&tab=shipping&section=' . strtolower( $shipping_method_class_name ) );
+		} else {
+			return admin_url( 'admin.php?page=woocommerce_settings&tab=shipping&section=' . $shipping_method_class_name );
+		}
+	}
+
+
+	/**
+	 * Returns true if the current page is the admin configuration page for the
+	 * shipping method with class name $shipping_method_class_name
+	 *
+	 * @since 1.0
+	 * @param string $shipping_method_class_name the shipping method class name
+	 * @return boolean true if the current page is the admin configuration page for the shipping method
+	 */
+	public static function is_shipping_method_configuration_page( $shipping_method_class_name ) {
+
+		if ( self::is_wc_version_gte_2_1() ) {
+			return isset( $_GET['page'] ) && 'wc-settings' == $_GET['page'] &&
+				isset( $_GET['tab'] ) && 'shipping' == $_GET['tab'] &&
+				isset( $_GET['section'] ) && strtolower( $shipping_method_class_name ) == $_GET['section'];
+		} else {
+			return isset( $_GET['page'] ) && 'woocommerce_settings' == $_GET['page'] &&
+				isset( $_GET['tab'] ) && 'shipping' == $_GET['tab'] &&
+				isset( $_GET['section'] ) && $shipping_method_class_name == $_GET['section'];
+		}
+	}
+
+
+
+	/**
 	 * Format decimal numbers ready for DB storage
 	 *
 	 * Sanitize, remove locale formatting, and optionally round + trim off zeros
@@ -305,6 +346,63 @@ class WC_My_Plugin_Compatibility {
 
 
 	/**
+	 * Returns the array of shipping methods chosen during checkout
+	 *
+	 * @since 1.0
+	 * @return array of chosen shipping method ids
+	 */
+	public static function get_chosen_shipping_methods() {
+
+		if ( self::is_wc_version_gte_2_1() ) {
+			return self::WC()->session->get( 'chosen_shipping_methods' );
+		} else {
+			return array( self::WC()->session->get( 'chosen_shipping_method' ) );
+		}
+	}
+
+
+	/**
+	 * Returns an array of shipping methods used for the order.  This is analogous
+	 * to but not a precise replacement for WC_Order::get_shipping_methods(), just
+	 * because there can't be a direct equivalent for WC 2.0.x
+	 *
+	 * @since 1.0
+	 * @return array of shipping method ids for $order
+	 */
+	public static function get_shipping_method_ids( $order ) {
+
+		if ( self::is_wc_version_gte_2_1() ) {
+
+			$shipping_method_ids = array();
+
+			foreach ( $order->get_shipping_methods() as $shipping_method ) {
+				$shipping_method_ids[] = $shipping_method['method_id'];
+			}
+
+			return $shipping_method_ids;
+		} else {
+			return array( $order->shipping_method );
+		}
+	}
+
+
+	/**
+	 * Returns true if the order has the given shipping method
+	 *
+	 * @since 1.0
+	 * @return boolean true if $order is shipped by $method_id
+	 */
+	public static function has_shipping_method( $order, $method_id ) {
+
+		if ( self::is_wc_version_gte_2_1() ) {
+			return $order->has_shipping_method( $method_id );
+		} else {
+			return $method_id == $order->shipping_method;
+		}
+	}
+
+
+	/**
 	 * Compatibility function to get the version of the currently installed WooCommerce
 	 *
 	 * @since 1.0
@@ -317,6 +415,39 @@ class WC_My_Plugin_Compatibility {
 		if ( defined( 'WOOCOMMERCE_VERSION' ) && WOOCOMMERCE_VERSION ) return WOOCOMMERCE_VERSION;
 
 		return null;
+	}
+
+
+	/**
+	 * Returns the WooCommerce instance
+	 *
+	 * @since 1.0
+	 * @return WooCommerce woocommerce instance
+	 */
+	public static function WC() {
+
+		if ( self::is_wc_version_gte_2_1() ) {
+			return WC();
+		} else {
+			global $woocommerce;
+			return $woocommerce;
+		}
+	}
+
+
+	/**
+	 * Returns true if the WooCommerce plugin is loaded
+	 *
+	 * @since 1.0
+	 * @return boolean true if WooCommerce is loaded
+	 */
+	public static function is_wc_loaded() {
+
+		if ( self::is_wc_version_gte_2_1() ) {
+			return class_exists( 'WooCommerce' );
+		} else {
+			return class_exists( 'Woocommerce' );
+		}
 	}
 
 
