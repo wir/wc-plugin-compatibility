@@ -315,7 +315,6 @@ class WC_My_Plugin_Compatibility {
 	}
 
 
-
 	/**
 	 * Format decimal numbers ready for DB storage
 	 *
@@ -370,7 +369,8 @@ class WC_My_Plugin_Compatibility {
 	public static function get_chosen_shipping_methods() {
 
 		if ( self::is_wc_version_gte_2_1() ) {
-			return self::WC()->session->get( 'chosen_shipping_methods' );
+			$chosen_shipping_methods = self::WC()->session->get( 'chosen_shipping_methods' );
+			return $chosen_shipping_methods ? $chosen_shipping_methods : array();
 		} else {
 			return array( self::WC()->session->get( 'chosen_shipping_method' ) );
 		}
@@ -387,7 +387,12 @@ class WC_My_Plugin_Compatibility {
 	 */
 	public static function get_shipping_method_ids( $order ) {
 
-		if ( self::is_wc_version_gte_2_1() ) {
+		if ( self::get_order_custom_field( $order, 'shipping_method' ) ) {
+
+			// pre WC 2.1 data
+			return array( self::get_order_custom_field( $order, 'shipping_method' ) );
+
+		} else {
 
 			$shipping_method_ids = array();
 
@@ -396,8 +401,6 @@ class WC_My_Plugin_Compatibility {
 			}
 
 			return $shipping_method_ids;
-		} else {
-			return array( $order->shipping_method );
 		}
 	}
 
@@ -410,10 +413,11 @@ class WC_My_Plugin_Compatibility {
 	 */
 	public static function has_shipping_method( $order, $method_id ) {
 
-		if ( self::is_wc_version_gte_2_1() ) {
-			return $order->has_shipping_method( $method_id );
+		if ( self::get_order_custom_field( $order, 'shipping_method' ) ) {
+			// pre WC 2.1 data
+			return $method_id == self::get_order_custom_field( $order, 'shipping_method' );
 		} else {
-			return $method_id == $order->shipping_method;
+			return $order->has_shipping_method( $method_id );
 		}
 	}
 
