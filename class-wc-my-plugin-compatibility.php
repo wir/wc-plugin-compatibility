@@ -380,9 +380,9 @@ class WC_My_Plugin_Compatibility {
 	/**
 	 * Returns an array of shipping methods used for the order.  This is analogous
 	 * to but not a precise replacement for WC_Order::get_shipping_methods(), just
-	 * because there can't be a direct equivalent for WC 2.0.x
+	 * because there can't be a direct equivalent for pre WC 2.1
 	 *
-	 * @since 1.0
+	 * @since 1.0-1
 	 * @return array of shipping method ids for $order
 	 */
 	public static function get_shipping_method_ids( $order ) {
@@ -392,7 +392,7 @@ class WC_My_Plugin_Compatibility {
 			// pre WC 2.1 data
 			return array( self::get_order_custom_field( $order, 'shipping_method' ) );
 
-		} else {
+		} elseif ( self::is_wc_version_gte_2_1() ) {
 
 			$shipping_method_ids = array();
 
@@ -402,6 +402,8 @@ class WC_My_Plugin_Compatibility {
 
 			return $shipping_method_ids;
 		}
+
+		return array();
 	}
 
 
@@ -416,9 +418,12 @@ class WC_My_Plugin_Compatibility {
 		if ( self::get_order_custom_field( $order, 'shipping_method' ) ) {
 			// pre WC 2.1 data
 			return $method_id == self::get_order_custom_field( $order, 'shipping_method' );
-		} else {
+		} elseif ( self::is_wc_version_gte_2_1() ) {
 			return $order->has_shipping_method( $method_id );
 		}
+
+		// default
+		return false;
 	}
 
 
