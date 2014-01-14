@@ -382,7 +382,7 @@ class WC_My_Plugin_Compatibility {
 	 * to but not a precise replacement for WC_Order::get_shipping_methods(), just
 	 * because there can't be a direct equivalent for pre WC 2.1
 	 *
-	 * @since 1.0-1
+	 * @since 1.0
 	 * @return array of shipping method ids for $order
 	 */
 	public static function get_shipping_method_ids( $order ) {
@@ -430,15 +430,206 @@ class WC_My_Plugin_Compatibility {
 	/**
 	 * Compatibility function to use the new WC_Admin_Meta_Boxes class for the save_errors() function
 	 *
-	 * @since 1.0-1
+	 * @since 1.0
 	 * @return old save_errors function or new class
 	 */
-	public static function save_errors( ) {
+	public static function save_errors() {
 
 		if ( self::is_wc_version_gte_2_1() ) {
 				WC_Admin_Meta_Boxes::save_errors();
 		} else {
 				woocommerce_meta_boxes_save_errors();
+		}
+	}
+
+
+	/**
+	 * Get coupon types.
+	 *
+	 * @since 1.0
+	 * @return array of coupon types
+	 */
+	public static function wc_get_coupon_types() {
+
+		if ( self::is_wc_version_gte_2_1() ) {
+			return wc_get_coupon_types();
+		} else {
+			global $woocommerce;
+			return $woocommerce->get_coupon_discount_types();
+		}
+	}
+
+
+	/**
+	 * Gets a product meta field value, regardless of product type
+	 *
+	 * @since 1.0
+	 * @param WC_Product $product the product
+	 * @param string $field_name the field name
+	 * @return mixed meta value
+	 */
+	public static function get_product_meta( $product, $field_name ) {
+
+		// even in WC >= 2.0 product variations still use the product_custom_fields array apparently
+		if ( $product->variation_id && isset( $product->product_custom_fields[ '_' . $field_name ][0] ) && '' !== $product->product_custom_fields[ '_' . $field_name ][0] ) {
+			return $product->product_custom_fields[ '_' . $field_name ][0];
+		}
+
+		// use magic __get
+		return $product->$field_name;
+	}
+
+
+	/**
+	 * Format the price with a currency symbol.
+	 *
+	 * @since 1.0
+	 * @param float $price the price
+	 * @param array $args (default: array())
+	 * @return string formatted price
+	 */
+	public static function wc_price( $price, $args = array() ) {
+
+		if ( self::is_wc_version_gte_2_1() ) {
+			return wc_price( $price, $args );
+		} else {
+			return woocommerce_price( $price, $args );
+		}
+	}
+
+
+	/**
+	 * WooCommerce Shortcode wrapper
+	 *
+	 * @since 1.0
+	 * @param mixed $function shortcode callback
+	 * @param array $atts (default: array())
+	 * @param array $wrapper array of wrapper options (class, before, after)
+	 * @return string
+	 */
+	public static function shortcode_wrapper(
+		$function,
+		$atts = array(),
+		$wrapper = array(
+			'class' => 'woocommerce',
+			'before' => null,
+			'after' => null
+		) ) {
+
+		if ( self::is_wc_version_gte_2_1() ) {
+			return WC_Shortcodes::shortcode_wrapper( $function, $atts, $wrapper );
+		} else {
+			global $woocommerce;
+			return $woocommerce->shortcode_wrapper( $function, $atts, $wrapper );
+		}
+	}
+
+
+	/**
+	 * Compatibility function to load WooCommerec admin functions in the admin,
+	 * primarily needed for woocommerce_admin_fields() and woocommerce_update_options()
+	 *
+	 * Note these functions have been refactored in the WC_Admin_Settings class in 2.1+,
+	 * so plugins targeting those versions can safely use WC_Admin_Settings::output_fields()
+	 * and WC_Admin_Settings::save_fields instead
+	 *
+	 * @since 1.0
+	 */
+	public static function load_wc_admin_functions() {
+
+		if ( ! self::is_wc_version_gte_2_1() ) {
+
+			// woocommerce_admin_fields()
+			require_once( self::WC()->plugin_path() . '/admin/woocommerce-admin-settings.php' );
+
+			// woocommerce_update_options()
+			require_once( self::WC()->plugin_path() . '/admin/settings/settings-save.php' );
+
+		} else {
+
+			// in 2.1+, wc-admin-functions.php lazy loads the admin settings functions
+		}
+	}
+
+
+	/**
+	 * Get coupon types.
+	 *
+	 * @since 1.0
+	 * @return array of coupon types
+	 */
+	public static function wc_get_coupon_types() {
+
+		if ( self::is_wc_version_gte_2_1() ) {
+			return wc_get_coupon_types();
+		} else {
+			global $woocommerce;
+			return $woocommerce->get_coupon_discount_types();
+		}
+	}
+
+
+	/**
+	 * Gets a product meta field value, regardless of product type
+	 *
+	 * @since 1.0
+	 * @param WC_Product $product the product
+	 * @param string $field_name the field name
+	 * @return mixed meta value
+	 */
+	public static function get_product_meta( $product, $field_name ) {
+
+		// even in WC >= 2.0 product variations still use the product_custom_fields array apparently
+		if ( $product->variation_id && isset( $product->product_custom_fields[ '_' . $field_name ][0] ) && '' !== $product->product_custom_fields[ '_' . $field_name ][0] ) {
+			return $product->product_custom_fields[ '_' . $field_name ][0];
+		}
+
+		// use magic __get
+		return $product->$field_name;
+	}
+
+
+	/**
+	 * Format the price with a currency symbol.
+	 *
+	 * @since 1.0
+	 * @param float $price the price
+	 * @param array $args (default: array())
+	 * @return string formatted price
+	 */
+	public static function wc_price( $price, $args = array() ) {
+
+		if ( self::is_wc_version_gte_2_1() ) {
+			return wc_price( $price, $args );
+		} else {
+			return woocommerce_price( $price, $args );
+		}
+	}
+
+
+	/**
+	 * WooCommerce Shortcode wrapper
+	 *
+	 * @since 1.0
+	 * @param mixed $function shortcode callback
+	 * @param array $atts (default: array())
+	 * @param array $wrapper array of wrapper options (class, before, after)
+	 * @return string
+	 */
+	public static function shortcode_wrapper(
+		$function,
+		$atts = array(),
+		$wrapper = array(
+			'class' => 'woocommerce',
+			'before' => null,
+			'after' => null
+		) ) {
+
+		if ( self::is_wc_version_gte_2_1() ) {
+			return WC_Shortcodes::shortcode_wrapper( $function, $atts, $wrapper );
+		} else {
+			global $woocommerce;
+			return $woocommerce->shortcode_wrapper( $function, $atts, $wrapper );
 		}
 	}
 
@@ -515,6 +706,32 @@ class WC_My_Plugin_Compatibility {
 	public static function is_wc_version_gt( $version ) {
 
 		return self::get_wc_version() && version_compare( self::get_wc_version(), $version, '>' );
+	}
+
+
+	/**
+	 * Returns filtered body class for WC 2.1+ and pre 2.1
+	 *
+	 * @since 1.0
+	 * @param mixed $classes the classes array or string
+	 * @param mixed $class the plugin class WC 2.1+
+	 * @param mixed $preclass the plugin class pre WC 2.1
+	 * @return array of body classes
+	 */
+	public function pre_wc_body_class( $classes, $class, $preclass ) {
+
+		if ( self::is_wc_version_gte_2_1() ) {
+			$pluginclass = $class;
+		} else {
+			$pluginclass = $preclass;
+		}
+
+		if ( is_array( $classes ) )
+			$classes[] = $pluginclass;
+		else
+			$classes .= " $pluginclass ";
+
+		return $classes;
 	}
 
 
