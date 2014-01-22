@@ -10,6 +10,17 @@ Over time it's expected that methods will be removed as compatibility for older 
 
 The class also provides a convenient reference of methods, constants, etc, that need to be modified within a plugin for WooCommerce cross-compatibility.
 
+## Changelog
+
+**1.1 - 2014.01.22**
+
+* Feature - Added a bunch of new compatibility methods
+* Fix - Fixed get_order_custom_field() method
+
+**1.0 - 2014.01.17**
+
+* Initial release
+
 ## Compatibility Issues
 
 ### Fixed

@@ -39,7 +39,7 @@ if ( ! class_exists( 'WC_My_Plugin_Compatibility' ) ) :
  *
  * Current Compatibility: 2.0.x - 2.1
  *
- * @version 1.0
+ * @version 1.1
  */
 class WC_My_Plugin_Compatibility {
 
@@ -173,6 +173,7 @@ class WC_My_Plugin_Compatibility {
 	 * Returns the total shipping cost for the given order
 	 *
 	 * @since 1.0
+	 * @param WC_Order $order
 	 * @return float the shipping total
 	 */
 	public static function get_total_shipping( $order ) {
@@ -190,14 +191,16 @@ class WC_My_Plugin_Compatibility {
 	 * not have a leading underscore
 	 *
 	 * @since 1.0
-	 * @return mixed order custom field value for field named $name
+	 * @param WC_Order $order WC Order object
+	 * @param string $name meta key name without a leading underscore
+	 * @return string|mixed order custom field value for field named $name
 	 */
 	public static function get_order_custom_field( $order, $name ) {
 
 		if ( self::is_wc_version_gte_2_1() ) {
-			return $order->$name;
+			return isset( $order->$name ) ? $order->$name : '';
 		} else {
-			return isset( $order->order_custom_fields[ '_' . $name ][0] ) && $order->order_custom_fields[ '_' . $name ][0] ? $order->order_custom_fields[ '_' . $name ][0] : null;
+			return isset( $order->order_custom_fields[ '_' . $name ][0] ) ? $order->order_custom_fields[ '_' . $name ][0] : '';
 		}
 	}
 
@@ -411,6 +414,8 @@ class WC_My_Plugin_Compatibility {
 	 * Returns true if the order has the given shipping method
 	 *
 	 * @since 1.0
+	 * @param WC_Order $order
+	 * @param string $method_id
 	 * @return boolean true if $order is shipped by $method_id
 	 */
 	public static function has_shipping_method( $order, $method_id ) {
@@ -431,7 +436,6 @@ class WC_My_Plugin_Compatibility {
 	 * Compatibility function to use the new WC_Admin_Meta_Boxes class for the save_errors() function
 	 *
 	 * @since 1.0
-	 * @return old save_errors function or new class
 	 */
 	public static function save_errors() {
 
@@ -526,6 +530,104 @@ class WC_My_Plugin_Compatibility {
 
 
 	/**
+	 * Compatibility for the woocommerce_get_template() function which is soft-deprecated in 2.1+
+	 *
+	 * @since 1.1
+	 * @param string $template_name
+	 * @param array $args
+	 * @param string $template_path
+	 * @param string $default_path
+	 */
+	public static function wc_get_template( $template_name, $args, $template_path, $default_path ) {
+
+		if ( self::is_wc_version_gte_2_1() ) {
+
+			wc_get_template( $template_name, $args, $template_path, $default_path );
+
+		} else {
+
+			woocommerce_get_template( $template_name, $args, $template_path, $default_path );
+		}
+	}
+
+
+	/**
+	 * Compatibility for the woocommerce_date_format() function which is soft-deprecated in 2.1+
+	 *
+	 * @since 1.1
+	 * @return string date format
+	 */
+	public static function wc_date_format() {
+
+		return self::is_wc_version_gte_2_1() ? wc_date_format() : woocommerce_date_format();
+	}
+
+
+	/**
+	 * Compatibility for the woocommerce_time_format() function which is soft-deprecated in 2.1+
+	 *
+	 * @since 1.1
+	 * @return string time format
+	 */
+	public static function wc_time_format() {
+
+		return self::is_wc_version_gte_2_1() ? wc_time_format() : woocommerce_time_format();
+	}
+
+
+	/**
+	 * Compatibility for the wc_timezone_string() function, which only
+	 * exists in 2.1+
+	 *
+	 * @since 1.1
+	 * @return string a valid PHP timezone string for the site
+	 */
+	public static function wc_timezone_string() {
+
+		if ( self::is_wc_version_gte_2_1() ) {
+
+			return wc_timezone_string();
+
+		} else {
+
+			// if site timezone string exists, return it
+			if ( $timezone = get_option( 'timezone_string' ) ) {
+				return $timezone;
+			}
+
+			// get UTC offset, if it isn't set then return UTC
+			if ( 0 === ( $utc_offset = get_option( 'gmt_offset', 0 ) ) ) {
+				return 'UTC';
+			}
+
+			// adjust UTC offset from hours to seconds
+			$utc_offset *= 3600;
+
+			// attempt to guess the timezone string from the UTC offset
+			$timezone = timezone_name_from_abbr( '', $utc_offset );
+
+			// last try, guess timezone string manually
+			if ( false === $timezone ) {
+
+				$is_dst = date( 'I' );
+
+				foreach ( timezone_abbreviations_list() as $abbr ) {
+					foreach ( $abbr as $city ) {
+
+						if ( $city['dst'] == $is_dst && $city['offset'] == $utc_offset ) {
+							return $city['timezone_id'];
+						}
+					}
+				}
+			}
+
+			// fallback to UTC
+			return 'UTC';
+		}
+	}
+
+
+	/**
 	 * Compatibility function to load WooCommerec admin functions in the admin,
 	 * primarily needed for woocommerce_admin_fields() and woocommerce_update_options()
 	 *
@@ -548,6 +650,77 @@ class WC_My_Plugin_Compatibility {
 		} else {
 
 			// in 2.1+, wc-admin-functions.php lazy loads the admin settings functions
+		}
+	}
+
+
+	/**
+	 * Returns true if the current page is the admin general configuration page
+	 *
+	 * @since 1.1
+	 * @return boolean true if the current page is the admin general configuration page
+	 */
+	public static function is_general_configuration_page() {
+
+		if ( self::is_wc_version_gte_2_1() ) {
+			return isset( $_GET['page'] ) && 'wc-settings' == $_GET['page'] &&
+				( ! isset( $_GET['tab'] ) || 'general' == $_GET['tab'] );
+		} else {
+			return isset( $_GET['page'] ) && 'woocommerce_settings' == $_GET['page'] &&
+				( ! isset( $_GET['tab'] ) || 'general' == $_GET['tab'] );
+		}
+	}
+
+
+	/**
+	 * Returns the admin configuration url for the admin general configuration page
+	 *
+	 * @since 1.1
+	 * @return string admin configuration url for the admin general configuration page
+	 */
+	public static function get_general_configuration_url() {
+
+		if ( self::is_wc_version_gte_2_1() ) {
+			return admin_url( 'admin.php?page=wc-settings&tab=general' );
+		} else {
+			return admin_url( 'admin.php?page=woocommerce_settings&tab=general' );
+		}
+	}
+
+
+	/**
+	 * Returns the order_id if on the checkout order received page
+	 *
+	 * Note this must be used in the `wp` or later action, as earlier
+	 * actions do not yet have access to the query vars
+	 *
+	 * @since 1.1
+	 * @return int order identifier
+	 */
+	public static function get_checkout_order_received_order_id() {
+
+		if ( self::is_wc_version_gte_2_1() ) {
+			global $wp;
+			return isset( $wp->query_vars['order-received'] ) ? absint( $wp->query_vars['order-received'] ) : 0;
+		} else {
+			return isset( $_GET['order'] ) ? absint( $_GET['order'] ) : 0;
+		}
+	}
+
+
+	/**
+	 * Generates a URL for the thanks page (order received)
+	 *
+	 * @since 1.1
+	 * @param WC_Order $order
+	 * @return string url to thanks page
+	 */
+	public static function get_checkout_order_received_url( $order ) {
+
+		if ( self::is_wc_version_gte_2_1() ) {
+			return $order->get_checkout_order_received_url();
+		} else {
+			return get_permalink( woocommerce_get_page_id( 'thanks' ) );
 		}
 	}
 
